@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  elasticsearch:
+    image: elasticsearch:8.11.0
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms2g -Xmx2g"
+    ports:
+      - "9200:9200"
+    volumes:
+      - ./data/elasticsearch_data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  minhash-server:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      - API_KEY=${API_KEY}
+      - ES_HOST=elasticsearch
+      - ES_PORT=9200
+      - ES_INDEX_NAME=${ES_INDEX_NAME}
+      - MINHASH_PATH=/app/data/minhash_index
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    restart: unless-stopped

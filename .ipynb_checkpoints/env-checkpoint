@@ -1,0 +1,30 @@
+# API Configuration
+API_KEY=your_secure_api_key_here
+
+# S3 Configuration
+AWS_ACCESS_KEY_ID=your_s3_access_key
+AWS_SECRET_ACCESS_KEY=your_s3_secret_key
+S3_ENDPOINT_URL=https://storage.yandexcloud.net
+S3_BUCKET=kodas3
+S3_MINHASH_PATH=minhash_api_server/minhash_index
+S3_ELASTICSEARCH_PATH=minhash_api_server/elasticsearch_data
+
+# Elasticsearch Configuration
+ES_INDEX_NAME=actual_github_v1
+ES_HOST=elasticsearch
+ES_PORT=9200
+
+# MinHash Configuration
+MINHASH_PATH=/app/data/minhash_index
+MINHASH_NUM_PERM=128
+MINHASH_NUM_BUCKETS=16
+MINHASH_NUM_BITS=8
+MINHASH_SEED=228
+
+# Monitoring
+ENABLE_MONITORING=true
+
+# Server Configuration
+SERVER_HOST=0.0.0.0
+SERVER_PORT=8080
+WORKERS=4

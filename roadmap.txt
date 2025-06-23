@@ -1,0 +1,6 @@
+Docker Network: minhash_inference_default
+├── elasticsearch:9200  (контейнер ES)
+├── minhash-server:8080 (контейнер Flask)
+└── host:
+    ├── localhost:9200 → elasticsearch:9200
+    └── localhost:8080 → minhash-server:8080
