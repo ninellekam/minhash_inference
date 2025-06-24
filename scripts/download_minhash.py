@@ -2,6 +2,7 @@ import os
 import boto3
 from pathlib import Path
 import logging
+import threading
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -10,7 +11,7 @@ def format_gb(size_bytes):
     return size_bytes / (1024 ** 3)
 
 def download_s3_folder(s3_client, bucket, s3_folder, local_folder):
-    """Скачивает папку с S3 рекурсивно с прогрессом по объёму"""
+    """Скачивает папку с S3 рекурсивно с глобальным прогрессом"""
     local_path = Path(local_folder)
     local_path.mkdir(parents=True, exist_ok=True)
     
@@ -29,7 +30,14 @@ def download_s3_folder(s3_client, bucket, s3_folder, local_folder):
                 total_bytes += obj['Size']
     logger.info(f"Всего файлов: {len(all_files)}, общий размер: {format_gb(total_bytes):.2f} ГБ")
 
-    downloaded_bytes = 0
+    # Для корректного прогресса используем общий счетчик и lock (важно при многопоточности)
+    progress = {'downloaded': 0}
+    lock = threading.Lock()
+    def progress_callback(bytes_amount):
+        with lock:
+            progress['downloaded'] += bytes_amount
+            gb_left = format_gb(total_bytes - progress['downloaded'])
+            print(f"\rОсталось скачать: {gb_left:.2f} ГБ", end="", flush=True)
 
     for idx, (key, size) in enumerate(all_files, 1):
         relative_path = key.replace(s3_folder, '').lstrip('/')
@@ -37,10 +45,7 @@ def download_s3_folder(s3_client, bucket, s3_folder, local_folder):
         local_file_path.parent.mkdir(parents=True, exist_ok=True)
 
         logger.info(f"[{idx}/{len(all_files)}] Downloading {key} -> {local_file_path} ({size/1024/1024:.2f} MB)")
-        s3_client.download_file(bucket, key, str(local_file_path))
-        downloaded_bytes += size
-        gb_left = format_gb(total_bytes - downloaded_bytes)
-        print(f"\rОсталось скачать: {gb_left:.2f} ГБ", end="", flush=True)
+        s3_client.download_file(bucket, key, str(local_file_path), Callback=progress_callback)
 
     print("\nСкачивание всех файлов завершено!")
 
@@ -63,16 +68,6 @@ def main():
         os.getenv('S3_MINHASH_PATH'),
         'data/minhash_index'
     )
-    
-    # Скачиваем данные Elasticsearch (если есть)
-    if os.getenv('S3_ELASTICSEARCH_PATH'):
-        logger.info("📥 Downloading Elasticsearch data...")
-        download_s3_folder(
-            s3_client,
-            bucket,
-            os.getenv('S3_ELASTICSEARCH_PATH'),
-            'data/elasticsearch_data'
-        )
     
     logger.info("✅ Download completed!")
 
