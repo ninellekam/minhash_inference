@@ -7,28 +7,43 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+def format_gb(size_bytes):
+    return size_bytes / (1024 ** 3)
+
 def download_s3_folder(s3_client, bucket, s3_folder, local_folder):
-    """Скачивает папку с S3 рекурсивно"""
+    """Скачивает папку с S3 рекурсивно с прогрессом по объёму"""
     local_path = Path(local_folder)
     local_path.mkdir(parents=True, exist_ok=True)
     
+    # Собираем список файлов и общий размер
     paginator = s3_client.get_paginator('list_objects_v2')
     pages = paginator.paginate(Bucket=bucket, Prefix=s3_folder)
-    
+    all_files = []
+    total_bytes = 0
     for page in pages:
         if 'Contents' in page:
             for obj in page['Contents']:
                 key = obj['Key']
                 if key.endswith('/'):  # Skip directories
                     continue
-                
-                # Создаем локальный путь
-                relative_path = key.replace(s3_folder, '').lstrip('/')
-                local_file_path = local_path / relative_path
-                local_file_path.parent.mkdir(parents=True, exist_ok=True)
-                
-                logger.info(f"Downloading {key} -> {local_file_path}")
-                s3_client.download_file(bucket, key, str(local_file_path))
+                all_files.append((key, obj['Size']))
+                total_bytes += obj['Size']
+    logger.info(f"Всего файлов: {len(all_files)}, общий размер: {format_gb(total_bytes):.2f} ГБ")
+
+    downloaded_bytes = 0
+
+    for idx, (key, size) in enumerate(all_files, 1):
+        relative_path = key.replace(s3_folder, '').lstrip('/')
+        local_file_path = local_path / relative_path
+        local_file_path.parent.mkdir(parents=True, exist_ok=True)
+
+        logger.info(f"[{idx}/{len(all_files)}] Downloading {key} -> {local_file_path} ({size/1024/1024:.2f} MB)")
+        s3_client.download_file(bucket, key, str(local_file_path))
+        downloaded_bytes += size
+        gb_left = format_gb(total_bytes - downloaded_bytes)
+        print(f"\rОсталось скачать: {gb_left:.2f} ГБ", end="", flush=True)
+
+    print("\nСкачивание всех файлов завершено!")
 
 def main():
     # Настройка S3 клиента
