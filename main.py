@@ -31,7 +31,7 @@ app = Flask(__name__)
 CORS(app)
 limiter = Limiter(app=app, key_func=get_remote_address, default_limits=["3000 per second"])
 
-LSH_PATH = "/home/minhash_inference/data/minhash_index"
+LSH_PATH = os.getenv('LOCAL_MINHASH_INDEX_PATH')
 lsh = LMDBMinHashLSH(
     path=LSH_PATH,
     num_perm=128,
