@@ -58,7 +58,7 @@ def main():
         aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY'),
     )
     
-    bucket = os.getenv('S3_BUCKET')
+    bucket = os.getenv('S3_BUCKET', "kodas3")
     
     # Скачиваем MinHash индекс
     logger.info("📥 Downloading MinHash index...")

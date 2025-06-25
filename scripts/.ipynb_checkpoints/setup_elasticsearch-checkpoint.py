@@ -21,7 +21,7 @@ def wait_for_elasticsearch(es, timeout=300):
     return False
 
 def setup_elasticsearch():
-    es_host = os.getenv('ES_HOST', 'localhost')
+    es_host = 'localhost'
     es_port = os.getenv('ES_PORT', '9200')
     index_name = os.getenv('ES_INDEX_NAME', 'actual_github_v1')
     

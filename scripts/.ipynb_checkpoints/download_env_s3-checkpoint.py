@@ -3,7 +3,7 @@ import os
 
 bucket = os.getenv("S3_BUCKET", "kodas3")
 s3_key = os.getenv("S3_ENV_KEY", "minhash_api_server/.env")
-local_path = "/workspace/minhash_inference/.env"
+local_path = "/home/minhash_inference/.env"
 
 aws_key = os.getenv("AWS_ACCESS_KEY_ID")
 aws_secret = os.getenv("AWS_SECRET_ACCESS_KEY")
